@@ -27,12 +27,85 @@
 - API 요청 간소화
   - 구글맵 API에서 반환되는 데이터 중 필요한 데이터만 요청하도록 쿼리 파라미터를 조정 등 필요 이상의 데이터를 요청하지 않도록 API 요청을 간소화
 ## Chrome DevTools를 사용하여 프론트엔드 성능 분석
-- Network 패널 분석(API 호출에 걸리는 시간 확인)
+### Network 패널 분석(API 호출에 걸리는 시간 확인)
+
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/d3d3fa12-aa0c-4de6-816e-fef27f3f8ad3">
+
 API를 호출하는 부분의 소요 시간이며 가장 오래 걸리는 작업들입니다.
 
+### 성능 탭 확인
+
+<img width="613" alt="image" src="https://github.com/user-attachments/assets/d9b359c1-2393-4bd3-a593-faf35674aef0">
+
+#### 분석 단계
+
+##### 1. 타임라인 분석
+   - 상단에 표시된 네트워크 영역을 보면, restaurant, weather과 같은 외부 API 호출의 네트워크 요청들이 발생한 시점과 시간을 확인할 수 있습니다.
+   - restaurant와 weather은 병렬적으로 호출되는 것을 확인할 수 있고 첫 번째 줄의 restaurant가 호출되고 페이지에 랜더링되고 난 후 한 번 더 호출되는 것이 확인되고 weather 또한 2, 3번째 줄의 호출 후 랜더링 되고나서 각각 한 번씩 더 호출되는 것을 확인할 수 있습니다. 이 부분에서도 문제가 발생한 것으로 추측됩니다.
+##### 2. 네트워크 요청 분석 (다 비슷한 외부 API GET 요청이기 때문에 첫 번쨰 줄의 Restaurant만 분석해보겠습니다)
+
+<img width="694" alt="image" src="https://github.com/user-attachments/assets/83515a76-8bd2-4df2-aa36-573e7903178c">
+
+1. 네트워크 요청
+- URL: `restaurant` API 요청을 확인할 수 있습니다. 이 요청은 사용자가 주변 맛집 정보를 얻기 위해 호출했습니다!
+- 소요 시간: 
+  - 3.044초동안 네트워크 요청 및 응답이 처리되었습니다.
+  - 네트워크 전송 시간이 3.044초 중 대부분을 차지하며, 리소스 로드에는 950마이크로초(µs)가 소요되었습니다. 이는 응답이 빠르지 않다는 것을 의미합니다.
+- 요청 메소드: `GET` 요청을 사용하고 있습니다.
+- MIME 유형: 요청된 데이터는 `application/json` 형태로, 주변 맛집 정보를 JSON 데이터를 반환하는 API 호출입니다.
+
+2. 문제 분석
+- 네트워크 요청의 전송 시간이 3.044초로 오래 걸렸습니다. 이로 인해 API 서버의 응답 시간이 느리다는 것을 확인할 수 있었습니다.
+- 해결 방안
+  - API 응답 최적화: 백엔드 서버의 성능 병목을 확인하고, 필요한 경우 서버 성능을 개선하거나 요청 데이터를 캐시하여야 할 것 같습니다.
+  - 캐싱 사용: API의 응답이 자주 변하지 않기 때문에 Redis와 같은 캐시 서버를 사용을 고려해봐야할 것 같습니다.
+
+3. 로드와 유휴 시간
+- 페이지 로드 후 많은 유휴 시간(Idle)이 발생하고 있고 이는 페이지가 로딩되는 동안 일부 작업이 완료되지 않아서 기다려야 하는 상태로 생각됩니다.
+- 해결 방안
+  - 로딩 애니메이션: 데이터가 로드되는 동안 사용자에게 로딩 애니메이션을 제공을 고려해봐야 할 것 같습니다.
+  - 비동기 데이터 로딩: 페이지가 초기 로드될 때 모든 데이터를 불러오지 않고, 비동기로 데이터를 받아오는 방법도 생각해봐야할 것 같습니다.
 
 ## Lighthouse를 사용하여 웹 페이지 성능 점수 확인
+### SCORE
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/981f3610-68e2-42a8-8f68-7267c908349b">
+
+#### 성능
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/e3fc5387-3bd7-41d9-8100-c4290dc926a9">
+
+##### 진단
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/a0ad2f46-7380-40c1-9c83-e229c8970b06">
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/9b805364-febc-40a8-8abb-0d0b186f8b2f">
+
+##### 통과한 감사
+
+<img width="694" alt="image" src="https://github.com/user-attachments/assets/07a0a519-e248-4268-941b-1a10731522fc">
+
+<img width="694" alt="image" src="https://github.com/user-attachments/assets/a411b18b-5f60-4cfa-a82d-4dfb7f62c1f7">
+
+#### 접근성
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/c74cfcc2-37ec-4d9f-a758-f93113858e3b">
+
+##### 통과한 감사
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/c74e2662-86b8-48fe-84e6-748d9f41bf65">
+
+#### 권장 사항
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/749783ab-2a1e-4d41-90ff-b77de2aee87e">
+
+##### 통과한 감사
+
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/28f3e421-0446-4fde-b1e6-ecedc44c455e">
+
+#### 검색엔진 최적화
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/7c12831e-58f2-49a7-943a-31fc86bd2e9d">
+
+##### 통과한 감사
+<img width="688" alt="image" src="https://github.com/user-attachments/assets/e33d0dfe-c45a-48f6-a53e-b497f826034f">
 
 프론트엔드 성능 문제 식별 및 우선순위 설정
 
