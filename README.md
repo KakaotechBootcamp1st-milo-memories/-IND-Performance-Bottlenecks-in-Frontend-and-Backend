@@ -152,8 +152,74 @@ API를 호출하는 부분의 소요 시간이며 가장 오래 걸리는 작업
 3. 자바스크립트 줄이기 -> 절감 가능치: 205KiB
 - 단순히 절감 가능치 순서대로 우선순위를 두었습니다.
 
+## 프론트엔드 코드 최적화 (예: Lazy Loading, Code Splitting)
+### Weather 원본 코드
+```
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import "../styles/weather.css"
 
-프론트엔드 코드 최적화 (예: Lazy Loading, Code Splitting)
+const Weather = () => {
+    const [weather, setWeather] = useState(null);
+
+    useEffect(() => {
+        const fetchWeather = async (latitude, longitude) => {
+            try {
+                const response = await axios.get('/api/weather', {
+                    params: {
+                        nx: latitude,
+                        ny: longitude
+                    }
+                });
+                setWeather(response.data);
+            } catch (error) {
+                console.error('Error fetching weather data', error);
+            }
+        };
+
+        const getLocation = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    fetchWeather(latitude, longitude);
+                }, (error) => {
+                    console.error('Error getting location', error);
+                });
+            } else {
+                console.error('Geolocation is not supported by this browser.');
+            }
+        };
+
+        getLocation();
+    }, []);
+
+    if (!weather) {
+        return <div>Loading...</div>;
+    }
+
+    return (
+        <div className="weather-container">
+            <div className="weather-card">
+                <div className="weather-header">나의 위치</div>
+                <div className="weather-content">
+                    <div className="weather-details">
+                        <div className="weather-city">{weather.city}</div>
+                        <div className="weather-condition">대체로 맑음</div>
+                    </div>
+                    <div>
+                        <div className="weather-temp">{weather.cur_temperature}°C</div>
+                        <div className="weather-high-low">최고 {weather.high_temperature}° 최저 {weather.low_temperature}°</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Weather;
+```
+
+### Code Splitting 적용 - Weather Card 분리
 
 이미지 및 자원 최적화 (예: 이미지 압축, 파일 Minification)
 
